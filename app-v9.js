@@ -1,46 +1,45 @@
 import logo from './logo.svg';
 import './App.css';
 import React, { useEffect } from 'react';
-import firebase from 'firebase/compat/app'
-import 'firebase/compat/auth';
+import {initializeApp} from 'firebase/app'
+import{getAuth, signOut, onAuthStateChanged, signInWithCredential, signInAnonymously, GoogleAuthProvider,EmailAuthProvider} from'firebase/auth';
 import * as firebaseui from 'firebaseui';
 
 function App() {
+let firebaseAuth;
 
   useEffect(() => {
-    firebase.initializeApp({
+    initializeApp({
     });
 
-    
+    firebaseAuth = getAuth();
     const uiConfig = {
-      signInSuccessUrl: 'http://localhost:port_number/',
+      signInSuccessUrl: 'http://localhost:3000/',
       autoUpgradeAnonymousUsers: true,
       signInFlow: 'popup',
       signInOptions: [
-        firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-        firebase.auth.EmailAuthProvider.PROVIDER_ID
+        GoogleAuthProvider.PROVIDER_ID,
+        EmailAuthProvider.PROVIDER_ID
       ],
       callbacks: {
         signInFailure: function (error) {
           // Temp variable to hold the anonymous user data if needed.
           let data = null;
           // Hold a reference to the anonymous current user.
-          let anonymousUser = firebase.auth().currentUser;
+          let anonymousUser = firebaseAuth.currentUser;
           // For merge conflicts, the error.code will be
           // 'firebaseui/anonymous-upgrade-merge-conflict'.
           if (error.code != 'firebaseui/anonymous-upgrade-merge-conflict') {
             return Promise.resolve();
           }
-          console.log("I'm here.")
+          console.log('v9: ',"I'm here.")
           // The credential the user tried to sign in with.
           var cred = error.credential;
           // Copy data from anonymous user to permanent user and delete anonymous
           // user.
           // ...
           // Finish sign-in after data is copied.
-          return firebase
-          .auth()
-          .signInWithCredential(cred)
+          return signInWithCredential(firebaseAuth, cred)
           .then(anonymousUser.delete())
         }
       }
@@ -51,13 +50,13 @@ function App() {
       ui.start('#firebaseui-auth-container', uiConfig)
     }
     else {
-      const ui = new firebaseui.auth.AuthUI(firebase.auth())
+      const ui = new firebaseui.auth.AuthUI(firebaseAuth)
       ui.start('#firebaseui-auth-container', uiConfig)
     }
 
 
 
-    firebase.auth().onAuthStateChanged((user) => {
+    onAuthStateChanged(firebaseAuth, (user) => {
       if (user) {
         console.log(user.uid);
       }
@@ -67,12 +66,12 @@ function App() {
     })
   }, []);
 
-  const signInAnonymously = async (e) => {
-    firebase.auth().signInAnonymously();
+  const goSignInAnonymously = async (e) => {
+    signInAnonymously(firebaseAuth);
   }
 
   const signOutGoogle = async (e) => {
-    firebase.auth().signOut();
+    signOut(firebaseAuth);
   }
 
   return (
@@ -80,7 +79,7 @@ function App() {
       <div id='firebaseui-auth-container'>
 
       </div>
-      <button onClick={signInAnonymously}>Sign-In Anonymously</button>
+      <button onClick={goSignInAnonymously}>Sign-In Anonymously</button>
       <button onClick={signOutGoogle}>Sign out</button>
     </div>
 
